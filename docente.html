@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>U.E. Marien Garten A · Panel Docente</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          institucional: { 900: '#0F2A4A', 700: '#173A63', 500: '#2C5182' },
+          oro: { 600: '#B08D2B', 700: '#8F7220' },
+          papel: '#F7F4EC',
+        },
+        fontFamily: {
+          serif: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+          sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  body { background-color: #F7F4EC; }
+  .rule { border-top: 1px solid rgba(15, 42, 74, 0.18); }
+  .rule-strong { border-top: 2px solid #0F2A4A; }
+  input[type="number"]::-webkit-inner-spin-button { opacity: 1; }
+  .tab-activa { color: #0F2A4A; border-bottom: 2px solid #0F2A4A; }
+  .tab-inactiva { color: rgba(15,42,74,0.45); border-bottom: 2px solid transparent; }
+  ::selection { background: #B08D2B; color: white; }
+  input:focus-visible, select:focus-visible, button:focus-visible, textarea:focus-visible {
+    outline: 2px solid #B08D2B;
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .fade-in { animation: fadeIn 0.35s ease-out; }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+
+<body class="min-h-screen font-sans text-[#1F2937] flex flex-col">
+
+  <!-- Encabezado institucional -->
+  <header class="bg-institucional-900 text-white">
+    <div class="max-w-4xl mx-auto px-5 py-6 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-11 h-11 rounded-full border-2 border-oro-600 text-oro-600 flex items-center justify-center shrink-0">
+          <span class="font-serif font-semibold text-sm">MG</span>
+        </div>
+        <div>
+          <h1 class="font-serif font-semibold text-lg sm:text-xl leading-tight">U.E. Marien Garten A</h1>
+          <p class="text-xs sm:text-sm text-white/70 mt-0.5">Panel Docente · Kárdex Académico Digital</p>
+        </div>
+      </div>
+
+      <!-- Info docente + logout (visible tras iniciar sesión) -->
+      <div id="bloque-docente-header" class="hidden items-center gap-3">
+        <span id="nombre-docente-header" class="text-sm text-white/90 hidden sm:inline">—</span>
+        <button
+          id="btn-logout"
+          class="text-sm border border-white/30 hover:border-white/60 hover:bg-white/10 px-3 py-1.5 transition-colors"
+        >
+          Cerrar sesión
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 w-full max-w-4xl mx-auto px-5 py-8 sm:py-10">
+
+    <!-- ============================================================= -->
+    <!-- SECCIÓN 1: LOGIN                                               -->
+    <!-- ============================================================= -->
+    <section id="seccion-login" class="max-w-sm mx-auto">
+      <h2 class="font-serif text-lg text-institucional-900 mb-1">Ingreso de docentes</h2>
+      <p class="text-sm text-[#1F2937]/60 mb-6">Use su correo institucional y contraseña asignados.</p>
+
+      <form id="form-login" class="rule-strong pt-6 space-y-5" novalidate>
+        <div>
+          <label for="login-email" class="block text-sm font-medium text-institucional-900 mb-1.5">
+            Correo electrónico
+          </label>
+          <input
+            id="login-email" name="email" type="email" autocomplete="username"
+            placeholder="docente@marienGarten.edu.bo" required
+            class="w-full bg-transparent border border-institucional-900/25 rounded-none px-3 py-2.5 text-base focus:border-institucional-900 transition-colors"
+          />
+        </div>
+
+        <div>
+          <label for="login-password" class="block text-sm font-medium text-institucional-900 mb-1.5">
+            Contraseña
+          </label>
+          <input
+            id="login-password" name="password" type="password" autocomplete="current-password"
+            placeholder="••••••••" required
+            class="w-full bg-transparent border border-institucional-900/25 rounded-none px-3 py-2.5 text-base focus:border-institucional-900 transition-colors"
+          />
+        </div>
+
+        <button
+          type="submit" id="btn-login"
+          class="w-full bg-institucional-900 text-white font-medium py-3 tracking-wide hover:bg-institucional-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          <span id="btn-login-label">Iniciar sesión</span>
+        </button>
+      </form>
+
+      <div id="login-error" class="hidden mt-5 border-l-4 border-[#B3401F] bg-[#B3401F]/5 px-4 py-3 fade-in" role="alert">
+        <p class="text-sm font-medium text-[#B3401F]" id="login-error-texto">Correo o contraseña incorrectos.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- SECCIÓN 2: PANEL DE CONTROL (oculto hasta autenticarse)        -->
+    <!-- ============================================================= -->
+    <section id="panel-docente" class="hidden fade-in">
+
+      <!-- Selectores de contexto -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div>
+          <label for="select-curso" class="block text-xs uppercase tracking-wide text-institucional-900/50 mb-1.5">
+            Curso
+          </label>
+          <select id="select-curso" class="w-full border border-institucional-900/25 bg-white px-3 py-2 text-sm focus:border-institucional-900">
+            <option value="">Seleccione un curso</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="select-materia" class="block text-xs uppercase tracking-wide text-institucional-900/50 mb-1.5">
+            Materia
+          </label>
+          <select id="select-materia" class="w-full border border-institucional-900/25 bg-white px-3 py-2 text-sm focus:border-institucional-900" disabled>
+            <option value="">Seleccione un curso primero</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="select-trimestre" class="block text-xs uppercase tracking-wide text-institucional-900/50 mb-1.5">
+            Trimestre
+          </label>
+          <select id="select-trimestre" class="w-full border border-institucional-900/25 bg-white px-3 py-2 text-sm focus:border-institucional-900">
+            <option value="1">1° Trimestre</option>
+            <option value="2">2° Trimestre</option>
+            <option value="3">3° Trimestre</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Pestañas -->
+      <div class="flex gap-6 rule mb-6">
+        <button id="tab-btn-calificaciones" class="tab-activa pt-3 pb-2 text-sm font-medium -mt-px">
+          Registro de calificaciones
+        </button>
+        <button id="tab-btn-observaciones" class="tab-inactiva pt-3 pb-2 text-sm font-medium -mt-px">
+          Registro de observaciones
+        </button>
+      </div>
+
+      <!-- Aviso de éxito / error general del panel -->
+      <div id="panel-aviso" class="hidden mb-5 px-4 py-3 border-l-4 fade-in" role="status"></div>
+
+      <!-- ---------------------------------------------------------- -->
+      <!-- TAB A: Registro de calificaciones                           -->
+      <!-- ---------------------------------------------------------- -->
+      <div id="tab-calificaciones">
+        <p id="sin-seleccion-calif" class="text-sm text-[#1F2937]/50 py-6">
+          Seleccione un curso y una materia para ver la lista de estudiantes.
+        </p>
+
+        <div id="contenedor-tabla-calif" class="hidden">
+          <div class="overflow-x-auto rule">
+            <table class="w-full text-sm min-w-[640px]">
+              <thead>
+                <tr class="text-left text-institucional-900/60">
+                  <th class="py-2.5 pr-3 font-medium">Estudiante</th>
+                  <th class="py-2.5 px-2 font-medium text-center w-20">Ser /10</th>
+                  <th class="py-2.5 px-2 font-medium text-center w-20">Saber /45</th>
+                  <th class="py-2.5 px-2 font-medium text-center w-20">Hacer /40</th>
+                  <th class="py-2.5 px-2 font-medium text-center w-20">Decidir /5</th>
+                  <th class="py-2.5 pl-2 font-medium text-right w-24">Nota final</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-calificaciones-docente" class="divide-y divide-institucional-900/10">
+                <!-- filas insertadas dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mt-6 flex justify-end">
+            <button
+              id="btn-guardar-notas"
+              class="bg-institucional-900 text-white font-medium px-6 py-2.5 tracking-wide hover:bg-institucional-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <span id="btn-guardar-notas-label">Guardar notas</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---------------------------------------------------------- -->
+      <!-- TAB B: Registro de observaciones                            -->
+      <!-- ---------------------------------------------------------- -->
+      <div id="tab-observaciones" class="hidden">
+        <p id="sin-seleccion-obs" class="text-sm text-[#1F2937]/50 py-6">
+          Seleccione un curso y una materia para elegir al estudiante.
+        </p>
+
+        <form id="form-observacion" class="hidden rule-strong pt-6 space-y-5 max-w-lg" novalidate>
+          <div>
+            <label for="obs-estudiante" class="block text-sm font-medium text-institucional-900 mb-1.5">
+              Estudiante
+            </label>
+            <select id="obs-estudiante" required class="w-full border border-institucional-900/25 bg-white px-3 py-2.5 text-sm focus:border-institucional-900">
+              <option value="">Seleccione un estudiante</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="obs-tipo" class="block text-sm font-medium text-institucional-900 mb-1.5">
+              Tipo de observación
+            </label>
+            <select id="obs-tipo" required class="w-full border border-institucional-900/25 bg-white px-3 py-2.5 text-sm focus:border-institucional-900">
+              <option value="Academica">Académica</option>
+              <option value="Conductual">Conductual</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="obs-descripcion" class="block text-sm font-medium text-institucional-900 mb-1.5">
+              Descripción
+            </label>
+            <textarea
+              id="obs-descripcion" required rows="4"
+              placeholder="Describa la observación de forma clara y objetiva…"
+              class="w-full border border-institucional-900/25 bg-white px-3 py-2.5 text-sm focus:border-institucional-900 resize-none"
+            ></textarea>
+          </div>
+
+          <button
+            type="submit" id="btn-registrar-obs"
+            class="bg-institucional-900 text-white font-medium px-6 py-2.5 tracking-wide hover:bg-institucional-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <span id="btn-registrar-obs-label">Registrar observación</span>
+          </button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-institucional-900/10 mt-auto">
+    <div class="max-w-4xl mx-auto px-5 py-6 text-xs text-[#1F2937]/45">
+      U.E. Marien Garten A · Nivel Primario · Acceso exclusivo de personal docente
+    </div>
+  </footer>
+
+  <script src="docente.js"></script>
+</body>
+</html>

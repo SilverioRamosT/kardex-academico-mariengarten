@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>U.E. Marien Garten A · Kárdex Académico Digital</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          institucional: {
+            900: '#0F2A4A',
+            700: '#173A63',
+            500: '#2C5182',
+          },
+          oro: {
+            600: '#B08D2B',
+            700: '#8F7220',
+          },
+          papel: '#F7F4EC',
+        },
+        fontFamily: {
+          serif: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+          sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  body { background-color: #F7F4EC; }
+  .rule { border-top: 1px solid rgba(15, 42, 74, 0.18); }
+  .rule-strong { border-top: 2px solid #0F2A4A; }
+  .seal {
+    border: 2px solid #B08D2B;
+    color: #B08D2B;
+  }
+  ::selection { background: #B08D2B; color: white; }
+  input:focus-visible, button:focus-visible {
+    outline: 2px solid #B08D2B;
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .fade-in { animation: fadeIn 0.35s ease-out; }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+
+<body class="min-h-screen font-sans text-[#1F2937] flex flex-col">
+
+  <!-- Encabezado institucional -->
+  <header class="bg-institucional-900 text-white">
+    <div class="max-w-2xl mx-auto px-5 py-7 flex items-center gap-4">
+      <div class="w-12 h-12 rounded-full seal flex items-center justify-center shrink-0 bg-institucional-900">
+        <span class="font-serif font-semibold text-base">MG</span>
+      </div>
+      <div>
+        <h1 class="font-serif font-semibold text-xl sm:text-2xl leading-tight">U.E. Marien Garten A</h1>
+        <p class="text-sm sm:text-base text-white/75 mt-0.5">Consulta de Kárdex Académico Digital</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 w-full max-w-2xl mx-auto px-5 py-8 sm:py-10">
+
+    <!-- Formulario de consulta -->
+    <section aria-labelledby="form-title">
+      <h2 id="form-title" class="font-serif text-lg text-institucional-900 mb-1">Consultar boletín</h2>
+      <p class="text-sm text-[#1F2937]/60 mb-6">
+        Ingrese el número de Kárdex del estudiante y el C.I. del tutor registrado en el curso.
+      </p>
+
+      <form id="form-kardex" class="rule-strong pt-6 space-y-5" novalidate>
+        <div>
+          <label for="numero_kardex" class="block text-sm font-medium text-institucional-900 mb-1.5">
+            Número de Kárdex
+          </label>
+          <input
+            id="numero_kardex"
+            name="numero_kardex"
+            type="text"
+            inputmode="text"
+            autocomplete="off"
+            placeholder="MG-2026-0001"
+            required
+            class="w-full bg-transparent border border-institucional-900/25 rounded-none px-3 py-2.5 text-base focus:border-institucional-900 transition-colors"
+          />
+        </div>
+
+        <div>
+          <label for="ci_tutor" class="block text-sm font-medium text-institucional-900 mb-1.5">
+            C.I. del tutor
+          </label>
+          <input
+            id="ci_tutor"
+            name="ci_tutor"
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            placeholder="1234567"
+            required
+            class="w-full bg-transparent border border-institucional-900/25 rounded-none px-3 py-2.5 text-base focus:border-institucional-900 transition-colors"
+          />
+        </div>
+
+        <button
+          type="submit"
+          id="btn-consultar"
+          class="w-full bg-institucional-900 text-white font-medium py-3 tracking-wide hover:bg-institucional-700 active:bg-institucional-900 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          <span id="btn-label">Consultar boletín</span>
+        </button>
+      </form>
+
+      <!-- Mensaje de error -->
+      <div
+        id="mensaje-error"
+        class="hidden mt-5 border-l-4 border-[#B3401F] bg-[#B3401F]/5 px-4 py-3 fade-in"
+        role="alert"
+      >
+        <p class="text-sm font-medium text-[#B3401F]" id="mensaje-error-texto">
+          No se encontró un estudiante con esos datos. Verifique el número de Kárdex y el C.I. del tutor.
+        </p>
+      </div>
+    </section>
+
+    <!-- Resultados (oculto por defecto) -->
+    <section id="resultados" class="hidden mt-10 fade-in" aria-labelledby="resultados-title">
+
+      <!-- Datos del estudiante -->
+      <div class="rule-strong pt-6">
+        <p class="text-xs uppercase tracking-wider text-institucional-900/50 mb-1">Partida de estudiante</p>
+        <h2 id="resultados-title" class="font-serif text-2xl text-institucional-900" id="est-nombre">
+          <span id="est-nombre-completo">—</span>
+        </h2>
+        <dl class="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+          <div>
+            <dt class="text-institucional-900/50">Kárdex</dt>
+            <dd id="est-kardex" class="font-medium mt-0.5">—</dd>
+          </div>
+          <div>
+            <dt class="text-institucional-900/50">Nivel</dt>
+            <dd id="est-nivel" class="font-medium mt-0.5">—</dd>
+          </div>
+          <div>
+            <dt class="text-institucional-900/50">Grado</dt>
+            <dd id="est-grado" class="font-medium mt-0.5">—</dd>
+          </div>
+          <div>
+            <dt class="text-institucional-900/50">Paralelo</dt>
+            <dd id="est-paralelo" class="font-medium mt-0.5">—</dd>
+          </div>
+        </dl>
+      </div>
+
+      <!-- Calificaciones -->
+      <div class="mt-10">
+        <p class="text-xs uppercase tracking-wider text-institucional-900/50 mb-3">Calificaciones por trimestre</p>
+        <div class="overflow-x-auto rule">
+          <table class="w-full text-sm min-w-[560px]">
+            <thead>
+              <tr class="text-left text-institucional-900/60">
+                <th class="py-2.5 pr-3 font-medium">Materia</th>
+                <th class="py-2.5 px-3 font-medium text-center">Trim.</th>
+                <th class="py-2.5 px-3 font-medium text-center">Ser /10</th>
+                <th class="py-2.5 px-3 font-medium text-center">Saber /45</th>
+                <th class="py-2.5 px-3 font-medium text-center">Hacer /40</th>
+                <th class="py-2.5 px-3 font-medium text-center">Decidir /5</th>
+                <th class="py-2.5 pl-3 font-medium text-right">Nota final /100</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-calificaciones" class="divide-y divide-institucional-900/10">
+              <!-- filas insertadas dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+        <p id="sin-calificaciones" class="hidden text-sm text-[#1F2937]/50 py-4">
+          Aún no se registran calificaciones para este estudiante.
+        </p>
+      </div>
+
+      <!-- Observaciones -->
+      <div class="mt-10">
+        <p class="text-xs uppercase tracking-wider text-institucional-900/50 mb-3">Observaciones</p>
+        <div id="lista-observaciones" class="space-y-3">
+          <!-- tarjetas insertadas dinámicamente -->
+        </div>
+        <p id="sin-observaciones" class="hidden text-sm text-[#1F2937]/50 py-2">
+          No hay observaciones registradas.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-institucional-900/10 mt-auto">
+    <div class="max-w-2xl mx-auto px-5 py-6 text-xs text-[#1F2937]/45">
+      U.E. Marien Garten A · Nivel Primario · Uso exclusivo de padres y tutores
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
